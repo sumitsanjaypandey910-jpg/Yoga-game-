@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-grand-master-certificate, #printable-grand-master-certificate * {
+    visibility: visible;
+  }
+  #printable-grand-master-certificate {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    border: 8px solid #eab308 !important;
+    background: #ffffff !important;
+    padding: 3rem !important;
+  }
+}
