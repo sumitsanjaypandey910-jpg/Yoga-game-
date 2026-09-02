@@ -27,6 +27,15 @@ export interface PositionConstraint {
   check: (kps: Keypoint[]) => { passed: boolean; score: number; hint: string };
 }
 
+export interface PoseAnimationStep {
+  stepNumber: number;
+  title: string;
+  instruction: string;
+  duration: number; // in seconds
+  breathCue: 'inhale' | 'exhale' | 'steady';
+  keyAction: string;
+}
+
 export interface YogaPose {
   id: string;
   level: number;
@@ -54,6 +63,7 @@ export interface YogaPose {
     color: string;
   };
   svgPoseType: string;
+  animationSteps?: PoseAnimationStep[];
 }
 
 export interface UserProgress {

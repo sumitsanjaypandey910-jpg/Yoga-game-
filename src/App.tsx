@@ -245,6 +245,7 @@ export default function App() {
                   pose={activePose}
                   ageGroup={userProgress.ageGroup}
                   soundEnabled={userProgress.soundEnabled}
+                  voiceEnabled={userProgress.voiceEnabled}
                 />
               </div>
             </div>

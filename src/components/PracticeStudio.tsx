@@ -101,6 +101,7 @@ export const PracticeStudio: React.FC<PracticeStudioProps> = ({
             pose={selectedPose}
             ageGroup={ageGroup}
             soundEnabled={soundEnabled}
+            voiceEnabled={voiceEnabled}
           />
         </div>
       </div>

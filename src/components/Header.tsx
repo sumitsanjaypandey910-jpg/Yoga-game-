@@ -66,56 +66,56 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex items-center gap-1.5 p-1 bg-lime-100/90 rounded-2xl border border-lime-300">
+        <nav className="flex items-center gap-1 p-1 bg-lime-100/90 rounded-2xl border border-lime-300 overflow-x-auto max-w-full scrollbar-none shrink-0">
           <button
             id="tab-adventure-btn"
             onClick={() => onSelectTab('adventure')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 whitespace-nowrap transition-all ${
               currentTab === 'adventure'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-emerald-900 hover:bg-lime-200/60'
             }`}
           >
-            <Gamepad2 className="w-3.5 h-3.5" />
+            <Gamepad2 className="w-3.5 h-3.5 shrink-0" />
             <span>Adventure Quest</span>
           </button>
 
           <button
             id="tab-practice-btn"
             onClick={() => onSelectTab('practice')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 whitespace-nowrap transition-all ${
               currentTab === 'practice'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-emerald-900 hover:bg-lime-200/60'
             }`}
           >
-            <Compass className="w-3.5 h-3.5" />
+            <Compass className="w-3.5 h-3.5 shrink-0" />
             <span>Free Practice</span>
           </button>
 
           <button
             id="tab-breath-btn"
             onClick={() => onSelectTab('breath')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 whitespace-nowrap transition-all ${
               currentTab === 'breath'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-emerald-900 hover:bg-lime-200/60'
             }`}
           >
-            <Wind className="w-3.5 h-3.5" />
+            <Wind className="w-3.5 h-3.5 shrink-0" />
             <span>Mindful Breath</span>
           </button>
 
           <button
             id="tab-rewards-btn"
             onClick={() => onSelectTab('rewards')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 whitespace-nowrap transition-all ${
               currentTab === 'rewards'
                 ? 'bg-amber-500 text-white shadow-sm'
                 : 'text-amber-950 hover:bg-yellow-200/60'
             }`}
           >
-            <Award className="w-3.5 h-3.5" />
+            <Award className="w-3.5 h-3.5 shrink-0" />
             <span>Trophy Room</span>
           </button>
         </nav>
