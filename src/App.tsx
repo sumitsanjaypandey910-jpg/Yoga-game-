@@ -10,7 +10,7 @@ import { Level11RewardModal } from './components/Level11RewardModal';
 import { RewardGallery } from './components/RewardGallery';
 import { PracticeStudio } from './components/PracticeStudio';
 import { BreathStation } from './components/BreathStation';
-import { Trophy, Sparkles, Star, ChevronLeft, ChevronRight, Award, Play } from 'lucide-react';
+import { Trophy, Sparkles, Star, ChevronLeft, ChevronRight, Award, Play, BookOpen, Maximize } from 'lucide-react';
 
 const STORAGE_KEY = 'zenquest_yoga_progress_v2';
 
@@ -64,6 +64,8 @@ export default function App() {
   });
 
   const [showLevel11Modal, setShowLevel11Modal] = useState<boolean>(false);
+  const [showDetailedGuide, setShowDetailedGuide] = useState<boolean>(false);
+  const [isFullscreenPractice, setIsFullscreenPractice] = useState<boolean>(false);
 
   // Sync to local storage
   useEffect(() => {
@@ -142,6 +144,7 @@ export default function App() {
   const handleSelectLevel = (level: number) => {
     setCurrentLevel(level);
     setCurrentTab('adventure');
+    setIsFullscreenPractice(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -192,43 +195,66 @@ export default function App() {
               </div>
             )}
 
-            {/* Active Stage & Pose Card Split View */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Camera Sensor Stage */}
-              <div className="lg:col-span-8 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button
-                      id="prev-level-btn"
-                      disabled={currentLevel <= 1}
-                      onClick={() => setCurrentLevel((l) => Math.max(1, l - 1))}
-                      className="p-2 rounded-xl bg-white hover:bg-lime-100 disabled:opacity-40 disabled:cursor-not-allowed border border-lime-300 text-emerald-950 shadow-xs transition-transform active:scale-95"
-                      title="Previous Level"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
+            {/* Active Big Camera Stage */}
+            <div className="space-y-3">
+              {/* Controls bar above big camera */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    id="prev-level-btn"
+                    disabled={currentLevel <= 1}
+                    onClick={() => setCurrentLevel((l) => Math.max(1, l - 1))}
+                    className="p-2 rounded-xl bg-white hover:bg-lime-100 disabled:opacity-40 disabled:cursor-not-allowed border border-lime-300 text-emerald-950 shadow-xs transition-transform active:scale-95"
+                    title="Previous Level"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
 
-                    <span className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-yellow-200 to-lime-300 border border-lime-400 font-black text-xs text-emerald-950 shadow-xs">
-                      Level {currentLevel} of 12
-                    </span>
+                  <span className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-yellow-200 to-lime-300 border border-lime-400 font-black text-xs text-emerald-950 shadow-xs">
+                    Level {currentLevel} of 12
+                  </span>
 
-                    <button
-                      id="next-level-top-btn"
-                      disabled={currentLevel >= 12 || (!userProgress.completedLevels.includes(currentLevel) && currentLevel !== 1)}
-                      onClick={() => setCurrentLevel((l) => Math.min(12, l + 1))}
-                      className="p-2 rounded-xl bg-white hover:bg-lime-100 disabled:opacity-40 disabled:cursor-not-allowed border border-lime-300 text-emerald-950 shadow-xs transition-transform active:scale-95"
-                      title="Next Level"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <button
+                    id="next-level-top-btn"
+                    disabled={currentLevel >= 12 || (!userProgress.completedLevels.includes(currentLevel) && currentLevel !== 1)}
+                    onClick={() => setCurrentLevel((l) => Math.min(12, l + 1))}
+                    className="p-2 rounded-xl bg-white hover:bg-lime-100 disabled:opacity-40 disabled:cursor-not-allowed border border-lime-300 text-emerald-950 shadow-xs transition-transform active:scale-95"
+                    title="Next Level"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <button
+                    id="toggle-fullscreen-practice-btn"
+                    onClick={() => setIsFullscreenPractice(true)}
+                    className="px-3 py-1.5 rounded-xl bg-lime-400 hover:bg-lime-300 text-emerald-950 border border-lime-500 text-xs font-black flex items-center gap-1.5 shadow-xs transition-transform active:scale-95"
+                    title="Open Fullscreen Camera Yoga with Corner Pose Guide"
+                  >
+                    <Maximize className="w-3.5 h-3.5" />
+                    <span>Fullscreen</span>
+                  </button>
+
+                  <button
+                    id="toggle-guide-details-btn"
+                    onClick={() => setShowDetailedGuide(!showDetailedGuide)}
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-lime-50 text-emerald-900 border border-lime-300 text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
+                    title="Toggle full text guide and benefits below camera"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-lime-700" />
+                    <span className="hidden sm:inline">{showDetailedGuide ? 'Hide Full Lore' : 'Pose Guide & Lore'}</span>
+                  </button>
 
                   <div className="flex items-center gap-1.5 text-xs font-extrabold text-amber-900 bg-amber-100/90 px-3 py-1.5 rounded-xl border border-amber-300">
                     <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
                     <span>Stars: {userProgress.levelStars[currentLevel] || 0}/3</span>
                   </div>
                 </div>
+              </div>
 
+              {/* Big Camera Sensor Stage with Corner Animated Guide */}
+              <div className="w-full">
                 <CameraPoseTracker
                   currentPose={activePose}
                   ageGroup={userProgress.ageGroup}
@@ -236,18 +262,26 @@ export default function App() {
                   voiceEnabled={userProgress.voiceEnabled}
                   onLevelComplete={handleLevelComplete}
                   comboStreak={userProgress.currentStreak}
+                  isFullscreen={isFullscreenPractice}
+                  onExitFullscreen={() => setIsFullscreenPractice(false)}
+                  levelNumber={currentLevel}
+                  totalLevels={12}
+                  onNextPose={currentLevel < 12 ? () => setCurrentLevel((l) => Math.min(12, l + 1)) : undefined}
+                  onPrevPose={currentLevel > 1 ? () => setCurrentLevel((l) => Math.max(1, l - 1)) : undefined}
                 />
               </div>
 
-              {/* Target Pose Guide Card */}
-              <div className="lg:col-span-4">
-                <PoseGuideCard
-                  pose={activePose}
-                  ageGroup={userProgress.ageGroup}
-                  soundEnabled={userProgress.soundEnabled}
-                  voiceEnabled={userProgress.voiceEnabled}
-                />
-              </div>
+              {/* Optional In-Depth Pose Guide Card Below Camera */}
+              {showDetailedGuide && (
+                <div className="pt-2 animate-in fade-in slide-in-from-top-3 duration-200">
+                  <PoseGuideCard
+                    pose={activePose}
+                    ageGroup={userProgress.ageGroup}
+                    soundEnabled={userProgress.soundEnabled}
+                    voiceEnabled={userProgress.voiceEnabled}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Level Quest Map at Bottom of Adventure view */}

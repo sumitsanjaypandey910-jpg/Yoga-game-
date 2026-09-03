@@ -284,12 +284,12 @@ export const AnimatedPoseVideo: React.FC<AnimatedPoseVideoProps> = ({
 // ANIMATED CARTOON HUMAN CHARACTER RENDERER
 // ==========================================
 
-interface AnimatedCartoonYogiProps {
+export interface AnimatedCartoonYogiProps {
   poseType: string;
   motionPhase: number; // 0 (neutral) to 1.0 (peak form)
 }
 
-const AnimatedCartoonYogiRenderer: React.FC<AnimatedCartoonYogiProps> = ({ poseType, motionPhase }) => {
+export const AnimatedCartoonYogiRenderer: React.FC<AnimatedCartoonYogiProps> = ({ poseType, motionPhase }) => {
   const p = Math.max(0, Math.min(1.1, motionPhase));
 
   // Cartoon Human Aesthetics Palette

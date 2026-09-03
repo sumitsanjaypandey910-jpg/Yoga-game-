@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, RefreshCw, Sparkles, AlertCircle, Eye, Sliders, Volume2, VolumeX, Flame, Video, Maximize, Minimize, X } from 'lucide-react';
+import { Camera, RefreshCw, Sparkles, AlertCircle, Eye, Sliders, Volume2, VolumeX, Flame, Video, Maximize, Minimize, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AgeGroup, Keypoint, PoseFeedback, YogaPose } from '../types/yoga';
 import { drawPoseOnCanvas, evaluatePose, generateSyntheticPose, initPoseDetector } from '../utils/poseDetector';
 import { playHoldTickSound, playLevelSuccessSound, playPoseLockedSound, speakGuidePhrase } from '../utils/audioEffects';
 import { PoseHoldTimer } from './PoseHoldTimer';
 import { PoseIllustration } from './PoseIllustrations';
-import { AnimatedPoseVideo } from './AnimatedPoseVideo';
+import { CornerAnimatedPose } from './CornerAnimatedPose';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 
 interface CameraPoseTrackerProps {
@@ -15,6 +15,12 @@ interface CameraPoseTrackerProps {
   voiceEnabled: boolean;
   onLevelComplete: (stars: number, score: number, holdTime: number) => void;
   comboStreak: number;
+  isFullscreen?: boolean;
+  onExitFullscreen?: () => void;
+  onNextPose?: () => void;
+  onPrevPose?: () => void;
+  levelNumber?: number;
+  totalLevels?: number;
 }
 
 export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
@@ -24,6 +30,12 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
   voiceEnabled,
   onLevelComplete,
   comboStreak,
+  isFullscreen: controlledFullscreen,
+  onExitFullscreen,
+  onNextPose,
+  onPrevPose,
+  levelNumber,
+  totalLevels = 12,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -34,8 +46,8 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [showGhost, setShowGhost] = useState<boolean>(true);
   const [showJointMetrics, setShowJointMetrics] = useState<boolean>(false);
-  const [showMiniVideoTrainer, setShowMiniVideoTrainer] = useState<boolean>(false);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [internalFullscreen, setInternalFullscreen] = useState<boolean>(false);
+  const isFullscreen = controlledFullscreen !== undefined ? controlledFullscreen : internalFullscreen;
 
   // Real-time tracking state
   const [feedback, setFeedback] = useState<PoseFeedback>({
@@ -124,23 +136,33 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
   };
 
   const toggleFullscreen = () => {
-    if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
+    if (onExitFullscreen && isFullscreen) {
+      onExitFullscreen();
+      return;
+    }
+    if (controlledFullscreen === undefined) {
+      if (!containerRef.current) return;
+      if (!document.fullscreenElement && !internalFullscreen) {
+        containerRef.current.requestFullscreen().catch(() => {});
+        setInternalFullscreen(true);
+      } else {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+        setInternalFullscreen(false);
+      }
     }
   };
 
   useEffect(() => {
     const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      if (controlledFullscreen === undefined) {
+        setInternalFullscreen(!!document.fullscreenElement);
+      }
     };
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
-  }, []);
+  }, [controlledFullscreen]);
 
   useEffect(() => {
     startCamera();
@@ -275,8 +297,10 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
       <div
         ref={containerRef}
         className={`relative w-full ${
-          isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen max-h-none' : 'aspect-4/3 sm:aspect-16/10 max-h-[540px] rounded-3xl'
-        } overflow-hidden bg-emerald-950/90 border-4 border-lime-400 shadow-2xl shadow-emerald-950/20 flex items-center justify-center`}
+          isFullscreen
+            ? 'fixed inset-0 z-50 rounded-none h-screen w-screen max-h-none border-0'
+            : 'h-[520px] sm:h-[600px] md:h-[680px] lg:h-[740px] max-h-[85vh] rounded-3xl border-4 border-lime-400 shadow-2xl shadow-emerald-950/30'
+        } overflow-hidden bg-emerald-950/90 flex items-center justify-center`}
       >
         {/* Live Camera Video (Mirrored) */}
         <video
@@ -319,56 +343,86 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
         />
 
         {/* Top Status & Controls Overlay Bar */}
-        <div className="absolute top-2 sm:top-3 inset-x-2 sm:inset-x-3 z-20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-1.5 sm:gap-2 pointer-events-auto">
-          {/* Real-time Posture Feedback Pill */}
-          <div className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl backdrop-blur-md border shadow-lg flex items-center gap-2 transition-all ${
+        <div className="absolute top-2 sm:top-3 inset-x-2 sm:inset-x-3 z-20 flex items-center justify-between gap-1.5 sm:gap-2 pointer-events-auto">
+          {/* Left: Back button (in Fullscreen) or Pose Badge */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {isFullscreen && (
+              <button
+                id="exit-fullscreen-btn"
+                onClick={onExitFullscreen || toggleFullscreen}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-black/70 hover:bg-black/90 text-white border border-white/20 backdrop-blur-md text-xs font-black flex items-center gap-1 shadow-lg active:scale-95 transition-transform"
+                title="Back / Exit Fullscreen"
+              >
+                <ChevronLeft className="w-4 h-4 text-lime-400" />
+                <span className="hidden xs:inline">Back</span>
+              </button>
+            )}
+
+            {(onPrevPose || onNextPose) && (
+              <div className="flex items-center gap-0.5 bg-black/70 backdrop-blur-md p-0.5 rounded-xl border border-white/20">
+                {onPrevPose && (
+                  <button
+                    id="camera-prev-pose-btn"
+                    onClick={onPrevPose}
+                    className="p-1 rounded-lg hover:bg-white/20 text-white transition-colors"
+                    title="Previous Pose"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <span className="px-2 py-0.5 text-[10px] sm:text-xs font-black text-lime-300">
+                  Lvl {levelNumber || currentPose.level}
+                </span>
+                {onNextPose && (
+                  <button
+                    id="camera-next-pose-btn"
+                    onClick={onNextPose}
+                    className="p-1 rounded-lg hover:bg-white/20 text-white transition-colors"
+                    title="Next Pose"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Real-time Posture Feedback Pill (Center) */}
+          <div className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl backdrop-blur-md border shadow-lg flex items-center gap-1.5 sm:gap-2 transition-all max-w-[200px] sm:max-w-md ${
             feedback.isMatched
               ? 'bg-emerald-500/90 border-emerald-300 text-white shadow-emerald-500/30'
               : 'bg-amber-400/95 border-amber-200 text-amber-950 shadow-amber-500/30'
           }`}>
-            <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 ${feedback.isMatched ? 'text-yellow-200 fill-yellow-200 animate-spin' : 'text-amber-900'}`} />
-            <span className="text-xs sm:text-sm font-black tracking-wide truncate">
+            <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${feedback.isMatched ? 'text-yellow-200 fill-yellow-200 animate-spin' : 'text-amber-900'}`} />
+            <span className="text-[11px] sm:text-xs font-black tracking-wide truncate">
               {feedback.primaryHint}
             </span>
           </div>
 
-          {/* Quick Controls */}
-          <div className="flex items-center gap-1.5 self-end sm:self-auto">
-            {/* Follow-along Mini Video Trainer Toggle */}
-            <button
-              id="toggle-mini-video-trainer-btn"
-              onClick={() => setShowMiniVideoTrainer(!showMiniVideoTrainer)}
-              title="Toggle Follow-Along Video on Screen"
-              className={`p-2 rounded-xl backdrop-blur-md border transition-all text-xs font-black flex items-center gap-1 ${
-                showMiniVideoTrainer ? 'bg-yellow-400 text-emerald-950 border-yellow-200 shadow-md' : 'bg-black/50 text-white border-white/20 hover:bg-black/70'
-              }`}
-            >
-              <Video className="w-3.5 h-3.5" />
-              <span className="text-[11px]">Video Demo</span>
-            </button>
-
+          {/* Right: Quick Camera Controls */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               id="toggle-ghost-silhouette-btn"
               onClick={() => setShowGhost(!showGhost)}
               title={showGhost ? 'Hide alignment silhouette' : 'Show alignment silhouette'}
-              className={`p-2 rounded-xl backdrop-blur-md border transition-all text-xs font-bold flex items-center gap-1 ${
-                showGhost ? 'bg-lime-400 text-emerald-950 border-lime-200' : 'bg-black/50 text-white border-white/20 hover:bg-black/70'
+              className={`p-1.5 sm:p-2 rounded-xl backdrop-blur-md border transition-all text-xs font-bold flex items-center gap-1 ${
+                showGhost ? 'bg-lime-400 text-emerald-950 border-lime-200' : 'bg-black/60 text-white border-white/20 hover:bg-black/80'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Ghost</span>
+              <span className="hidden md:inline">Ghost</span>
             </button>
 
             <button
               id="toggle-joint-metrics-btn"
               onClick={() => setShowJointMetrics(!showJointMetrics)}
               title="Show joint angle metrics"
-              className={`p-2 rounded-xl backdrop-blur-md border transition-all text-xs font-bold flex items-center gap-1 ${
-                showJointMetrics ? 'bg-amber-400 text-amber-950 border-amber-200' : 'bg-black/50 text-white border-white/20 hover:bg-black/70'
+              className={`p-1.5 sm:p-2 rounded-xl backdrop-blur-md border transition-all text-xs font-bold flex items-center gap-1 ${
+                showJointMetrics ? 'bg-amber-400 text-amber-950 border-amber-200' : 'bg-black/60 text-white border-white/20 hover:bg-black/80'
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Angles</span>
+              <span className="hidden md:inline">Angles</span>
             </button>
 
             {cameraState === 'active' && (
@@ -376,7 +430,7 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
                 id="flip-camera-btn"
                 onClick={flipCamera}
                 title="Flip Camera front/back"
-                className="p-2 rounded-xl bg-black/50 hover:bg-black/70 text-white border border-white/20 backdrop-blur-md transition-transform active:scale-95"
+                className="p-1.5 sm:p-2 rounded-xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-transform active:scale-95"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
@@ -386,7 +440,7 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
               id="toggle-camera-fullscreen-btn"
               onClick={toggleFullscreen}
               title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Yoga Mode'}
-              className="p-2 rounded-xl bg-black/50 hover:bg-black/70 text-white border border-white/20 backdrop-blur-md"
+              className="p-1.5 sm:p-2 rounded-xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md"
             >
               {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
             </button>
@@ -395,39 +449,18 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
               id="toggle-camera-simulator-btn"
               onClick={toggleSimulation}
               title={cameraState === 'active' ? 'Switch to Test Simulator' : 'Turn on Live Webcam'}
-              className="p-2 rounded-xl bg-black/50 hover:bg-black/70 text-yellow-300 border border-yellow-300/30 backdrop-blur-md text-xs font-bold flex items-center gap-1"
+              className="p-1.5 sm:p-2 rounded-xl bg-black/60 hover:bg-black/80 text-yellow-300 border border-yellow-300/30 backdrop-blur-md text-xs font-bold flex items-center gap-1"
             >
               <Camera className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">{cameraState === 'active' ? 'Webcam' : 'Sensor'}</span>
             </button>
           </div>
         </div>
 
-        {/* Mini Picture-in-Picture Video Trainer Overlay */}
-        {showMiniVideoTrainer && (
-          <div className="absolute bottom-3 left-3 sm:left-4 z-30 w-60 sm:w-72 shadow-2xl rounded-2xl overflow-hidden border-2 border-lime-400 bg-stone-900 animate-in fade-in">
-            <div className="flex items-center justify-between p-1.5 bg-emerald-950 border-b border-lime-500/30 text-[11px] font-black text-lime-300 px-3">
-              <span>Follow Video Trainer</span>
-              <button
-                id="close-mini-video-btn"
-                onClick={() => setShowMiniVideoTrainer(false)}
-                className="p-0.5 rounded-lg hover:bg-white/20 text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <AnimatedPoseVideo
-              pose={currentPose}
-              ageGroup={ageGroup}
-              soundEnabled={soundEnabled}
-              voiceEnabled={voiceEnabled}
-              compact={true}
-            />
-          </div>
-        )}
+        {/* On Left Side: Small Animated Cartoon Character in the corner */}
+        <CornerAnimatedPose pose={currentPose} />
 
         {/* Floating Hold Timer at Bottom-Right of Stage */}
-        <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20 pointer-events-auto scale-90 sm:scale-100 origin-bottom-right">
+        <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 pointer-events-auto scale-80 sm:scale-90 origin-bottom-right">
           <PoseHoldTimer
             currentHoldSeconds={holdTime}
             targetHoldSeconds={targetHoldSeconds}
@@ -437,9 +470,9 @@ export const CameraPoseTracker: React.FC<CameraPoseTrackerProps> = ({
           />
         </div>
 
-        {/* Joint Breakdown Drawer if toggled */}
-        {showJointMetrics && !showMiniVideoTrainer && (
-          <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 max-w-xs p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-lime-400/40 text-white text-xs z-20 space-y-1">
+        {/* Joint Breakdown Drawer if toggled (positioned neatly above corner guide) */}
+        {showJointMetrics && (
+          <div className="absolute bottom-28 sm:bottom-32 left-3 sm:left-5 max-w-xs p-3 rounded-2xl bg-black/85 backdrop-blur-md border border-lime-400/40 text-white text-xs z-20 space-y-1 shadow-2xl">
             <p className="font-bold text-lime-300 uppercase tracking-wider flex items-center gap-1">
               <Sliders className="w-3.5 h-3.5" /> Joint Precision:
             </p>
